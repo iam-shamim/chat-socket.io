@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>chat</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+	<div class="chat">
+		<input type="text" class="chat-name" placeholder="Enter your name">
+		<div class="chat-messages">
+
+		</div>
+		<textarea name="" id="" cols="30" rows="5" class="chat-textarea" placeholder='type your message'></textarea>
+		<div class="chat-status">Status: <span>Idle</span></div>
+	</div>
+	<script src="socket.io-1.3.7.js"></script>
+	<script src="jquery.min.js"></script>
+	<script>
+		
+		(function() {
+			var getNode = function(s){
+				return document.querySelector(s);
+			},
+			status=getNode('.chat-status span'),
+			messages = getNode('.chat-messages'),
+			textarea = getNode('.chat-textarea'),
+			chatName = getNode('.chat-name'),
+			statusDefault = status.textContent,
+			setStatus = function(s){
+				status.textContent = s;
+
+				if(s !== statusDefault){
+					var delay = setTimeout(function(){
+						setStatus(statusDefault);
+						clearInterval(delay);
+					},3000);
+				}
+			};
+			
+
+			try {
+				var socket = io.connect('http://127.0.0.1:8080');
+			}catch(e){
+				// set status to warn uer
+			}
+
+			if(socket !== undefined){
+				
+
+				// listen for output
+				socket.on('output',function(data){
+
+					if (data.length){
+						for(var x=0; x<data.length; x++){
+							/*
+							var message = document.createElement('div');
+							message.setAttribute('class','chat-message');
+							message.textContent= data[x].name + ': ' + data[x].message;
+							messages.appendChild(message);
+							messages.insertBefore(message, message.firstChild);
+							*/
+							$('.chat-messages').append('<div class="chat-message">'+data[x].name + ": " + data[x].message +'</div>');
+						}
+					};
+					var heightVal=$(".chat-messages")[0].scrollHeight
+
+		
+
+					$(".chat-messages").animate({
+						scrollTop: heightVal
+					},'fast');
+				});
+
+
+				socket.on('status',function(data){
+					setStatus((typeof data=== 'object')? data.message : data);
+					if(data.success===true){
+						textarea.value = '';
+					}
+				});
+
+				// Listen for keyDown
+				textarea.addEventListener('keydown',function(event){
+					var self = this,
+						name = chatName.value;
+
+					if(event.which===13 && event.shiftKey===false){
+						setStatus('Sending.........');
+						socket.emit('input',{
+							name: name,
+							message: self.value
+						});
+						event.preventDefault();
+
+					}
+					
+				});
+			}
+
+		})();
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
